@@ -1,0 +1,44 @@
+trigger:
+  tags:
+    include:
+      - '*'
+
+variables:
+  - group: container-registry
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: Job
+    steps:
+      - task: CmdLine@2
+        displayName: 'Setup Docker BuildKit'
+        inputs:
+          script: |
+            sudo docker buildx create --platform linux/amd64 --use
+            #Disable arm64 builds
+            #sudo docker run --privileged --rm tonistiigi/binfmt --install arm64
+      - task: CmdLine@2
+        displayName: 'Setup container registry credentials'
+        inputs:
+          script: |
+            sudo docker login $(CONTAINER_REGISTRY_NAMESPACE) \
+                        --username $(CONTAINER_REGISTRY_USERNAME) \
+                        --password $(CONTAINER_REGISTRY_TOKEN)
+      - task: CmdLine@2
+        displayName: 'Build and push container images'
+        inputs:
+          script: |
+            ARGS=()
+            for i in $(find ./VERSIONS/ -type f); do
+              ARGS+=('--build-arg' "${i##*/}=$(< $i)")
+            done
+            for i in $(find ./LOCALES/ -type f); do
+              sudo docker buildx build --build-arg LOCALE=${i##*/} "${ARGS[@]}" --platform linux/amd64 --push \
+                          --label org.opencontainers.image.created="$(date --rfc-3339 seconds --utc)" \
+                          --label org.opencontainers.image.version=$(< DISPLAY_VERSION) \
+                          --label org.opencontainers.image.revision=$(Build.SourceVersion) \
+                          --tag $(CONTAINER_REGISTRY_NAMESPACE)/$(CONTAINER_REGISTRY_USERNAME)/$(Build.Repository.Name):latest-${i##*/} \
+                          --tag $(CONTAINER_REGISTRY_NAMESPACE)/$(CONTAINER_REGISTRY_USERNAME)/$(Build.Repository.Name):$(< DISPLAY_VERSION)-${i##*/} .
+            done
