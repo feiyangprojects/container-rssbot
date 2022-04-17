@@ -1,0 +1,72 @@
+name: Container CI
+
+on:
+  push:
+    tags:
+      - "**"
+  pull_request:
+    tags:
+      - "**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+      - name: Setup Docker BuildKit
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        #Only build containers for amd64 architecture.
+        run: |
+          sudo docker buildx create --platform linux/amd64 --use
+          #sudo docker run --privileged --rm tonistiigi/binfmt --install arm64
+      - name: Get container name
+        id: name
+        uses: jungwinter/split@v2
+        with:
+          msg: ${{ github.repository }}
+          #Repository owner's name mustn't includes any slash.
+          separator: "-"
+      - name: Setup container registry credentials
+        env:
+          CONTAINER_REGISTRY_NAMESPACE: ${{ secrets.CONTAINER_REGISTRY_NAMESPACE }}
+          CONTAINER_REGISTRY_USERNAME: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+          CONTAINER_REGISTRY_TOKEN: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          sudo docker login "$CONTAINER_REGISTRY_NAMESPACE" \
+            --username "$CONTAINER_REGISTRY_USERNAME" \
+            --password "$CONTAINER_REGISTRY_TOKEN"
+      - name: Build and push container images
+        env:
+          CONTAINER_REGISTRY_NAMESPACE: ${{ secrets.CONTAINER_REGISTRY_NAMESPACE }}
+          CONTAINER_REGISTRY_USERNAME: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          ARGS=()
+          for i in $(find ./VERSIONS/ -type f); do
+            ARGS+=('--build-arg' "${i##*/}=$(< $i)")
+          done
+          for i in $(find ./LOCALES/ -type f); do
+            sudo docker buildx build --build-arg LOCALE=${i##*/} "${ARGS[@]}" --platform linux/amd64 --push \
+              --label org.opencontainers.image.created="$(date --rfc-3339 seconds --utc)" \
+              --label org.opencontainers.image.version="$(< DISPLAY_VERSION)" \
+              --label org.opencontainers.image.revision=${{ github.sha }} \
+              --tag "$CONTAINER_REGISTRY_NAMESPACE/$CONTAINER_REGISTRY_USERNAME/${{ steps.name.outputs._1 }}:latest-${i##*/}" \
+              --tag "$CONTAINER_REGISTRY_NAMESPACE/$CONTAINER_REGISTRY_USERNAME/${{ steps.name.outputs._1 }}:$(< DISPLAY_VERSION)-${i##*/}" .
+          done
+      - name: Build container images
+        #Test build for pull requests
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          ARGS=()
+          for i in $(find ./VERSIONS/ -type f); do
+            ARGS+=('--build-arg' "${i##*/}=$(< $i)")
+          done
+          for i in $(find ./LOCALES/ -type f); do
+            sudo docker build --build-arg LOCALE=${i##*/} "${ARGS[@]}" --tag "${{ steps.name.outputs._1 }}--${i##*/}" \
+              --label org.opencontainers.image.created="$(date --rfc-3339 seconds --utc)" \
+              --label org.opencontainers.image.version=$(< DISPLAY_VERSION) \
+              --label org.opencontainers.image.revision=${{ github.sha }} .
+          done
