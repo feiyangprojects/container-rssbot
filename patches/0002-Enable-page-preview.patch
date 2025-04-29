@@ -1,4 +1,4 @@
-From 11961500a54aa1e41e245e58a16d828f05faba9a Mon Sep 17 00:00:00 2001
+From 4f3498029927e3c3070c5c0c1fe3e8c550a20575 Mon Sep 17 00:00:00 2001
 From: Fei Yang <me@feiyang.moe>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
 Subject: [PATCH 2/3] Enable page preview.
@@ -7,9 +7,9 @@ Subject: [PATCH 2/3] Enable page preview.
  src/fetcher.rs | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git rssbot-2.0.0-alpha.11/src/fetcher.rs b/src/fetcher.rs
-index 77cda9e..ffc5d18 100644
---- rssbot-2.0.0-alpha.11/src/fetcher.rs
+diff --git a/src/fetcher.rs b/src/fetcher.rs
+index 0116a54..40fac92 100644
+--- a/src/fetcher.rs
 +++ b/src/fetcher.rs
 @@ -151,7 +151,7 @@ async fn push_updates<I: IntoIterator<Item = i64>>(
          'retry: for _ in 0..3 {
@@ -21,5 +21,5 @@ index 77cda9e..ffc5d18 100644
                  .await
              {
 -- 
-2.20.1
+2.49.0
 

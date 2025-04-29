@@ -6,11 +6,15 @@ ARG RUST_TOOLCHAIN_VERSION
 
 COPY patches /patches
 
-RUN set -ex && apk add build-base && cd / \
+RUN set -ex && apk add build-base git && cd / \
     && wget -O - https://sh.rustup.rs | sh -s -- --default-toolchain "$RUST_TOOLCHAIN_VERSION" --target x86_64-unknown-linux-musl -y \
-    && wget -O - "https://github.com/iovxw/rssbot/archive/$VERSION.tar.gz" | tar xzf -
-RUN set -ex && for i in $(find /patches -type f); do patch -s -p 0 < $i; done
-RUN set -ex && cd /rssbot-*/ \
+    && git clone --recurse-submodules --branch="$VERSION" --depth=1 https://github.com/iovxw/rssbot.git source
+RUN set -ex \
+    && git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com' \
+    && git config --global user.name 'github-actions[bot]'
+RUN set -ex && cd /source \
+    && find /patches -type f -exec git am {} \;
+RUN set -ex && cd /source \
     && "$HOME/.cargo/bin/cargo" build --release --target x86_64-unknown-linux-musl \
     && mv target/x86_64-unknown-linux-musl/release/rssbot /usr/bin/rssbot
 
