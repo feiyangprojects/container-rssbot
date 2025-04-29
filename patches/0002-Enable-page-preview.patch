@@ -1,4 +1,4 @@
-From 4f3498029927e3c3070c5c0c1fe3e8c550a20575 Mon Sep 17 00:00:00 2001
+From 56848f0fe0966f8a0d0702f398893c7180c6a3cf Mon Sep 17 00:00:00 2001
 From: Fei Yang <me@feiyang.moe>
 Date: Thu, 1 Jan 1970 00:00:00 +0000
 Subject: [PATCH 2/3] Enable page preview.

@@ -1,7 +1,7 @@
-From 8410ae2b2c2eb7a65b0e8b21c7ba0e7c64b3e119 Mon Sep 17 00:00:00 2001
-From: Fei Yang <io@feiyang.eu.org>
-Date: Tue, 29 Apr 2025 08:04:33 +0000
-Subject: [PATCH 3/3] Improve English translation
+From e2330220c7f37ede3372c7ce3764cfab6b58dfd9 Mon Sep 17 00:00:00 2001
+From: Fei1Yang <me@feiyang.moe>
+Date: Tue, 29 Apr 2025 09:38:29 +0000
+Subject: [PATCH 3/3] Improve English translation.
 
 ---
  locales/en.toml | 58 ++++++++++++++++++++++++-------------------------
